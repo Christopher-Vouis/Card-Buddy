@@ -1,0 +1,4 @@
+[
+	{"targetWord": "犬", "reading": "いぬ", "definition": "dog", "imagePath": "Test.png" },
+	{"targetWord": "駅", "reading": "えき", "definition": "station", "imagePath": "Test1.png" }
+]
