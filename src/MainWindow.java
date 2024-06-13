@@ -1,11 +1,10 @@
 import java.net.URL;
 import javafx.application.Application;
 import javafx.geometry.HPos;
+import javafx.geometry.Pos;
+import javafx.geometry.VPos;
 import javafx.stage.Stage;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.RowConstraints;
+import javafx.scene.layout.*;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -29,6 +28,9 @@ public class MainWindow extends Application {
 	String deckFile = "resources/cards/test deck.txt";
 	ImageView imageView;
 	Button button;
+	Text currentWord,
+		currentDefinition;
+	VBox cardPane;
 
 	Gson gson;
 	
@@ -39,7 +41,9 @@ public class MainWindow extends Application {
         primaryStage.setTitle("Card Buddy");       
         InitializeDeck();
         currentCard = currentDeck[0];
-        currentImage = new Image(getClass().getResource("/images/" + currentCard.GetImagePath()).toExternalForm(), true);     
+        currentImage = new Image(getClass().getResource("/images/" + currentCard.GetImagePath()).toExternalForm(), true);
+        currentWord = new Text(currentCard.GetWord());
+        currentDefinition = new Text(currentCard.GetDefinition());
         InitializeDisplay();
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -47,10 +51,14 @@ public class MainWindow extends Application {
     
     private void InitializeDisplay()
     {
-    	imageView = new ImageView(currentImage);  
+    	cardPane = new VBox();
+    	imageView = new ImageView(currentImage); 
+    	cardPane.getChildren().add(imageView);
+    	cardPane.getChildren().add(currentWord);
+    	cardPane.getChildren().add(currentDefinition);
     	gridPane = new GridPane();
     	gridPane.setGridLinesVisible(true);
-    	gridPane.add(imageView, 1, 1);    	
+    	gridPane.add(cardPane, 1, 1);    	
         scene = new Scene(gridPane, 500, 500);
         button = new Button("Next");
         button.setOnAction(e -> {
@@ -58,19 +66,33 @@ public class MainWindow extends Application {
         	UpdateDisplay();
         	});
         gridPane.add(button, 1, 2);
-        GridPane.setHalignment(imageView, HPos.CENTER);
-        GridPane.setHalignment(button, HPos.CENTER);        
+        GridPane.setHalignment(cardPane, HPos.CENTER);
+        GridPane.setValignment(cardPane, VPos.CENTER);
+        GridPane.setHalignment(button, HPos.CENTER);
+        
+        float heightPercent;
         
         for(int i = 0; i < 3; ++i)
-        {
+        {           
+            if(i != 1)
+            {
+            	heightPercent = 10.00f;
+            }
+            else
+            {
+            	heightPercent = 80.00f;
+            }
+            
         	ColumnConstraints colConst = new ColumnConstraints();
             colConst.setPercentWidth(33.33);
             gridPane.getColumnConstraints().add(colConst);
 
             RowConstraints rowConst = new RowConstraints();
-            rowConst.setPercentHeight(33.33);
+            rowConst.setPercentHeight(heightPercent);
             gridPane.getRowConstraints().add(rowConst);
         }
+        cardPane.setAlignment(Pos.CENTER);
+        cardPane.setSpacing(50);
         
         gridPane.prefWidthProperty().bind(scene.widthProperty());
         gridPane.prefHeightProperty().bind(scene.heightProperty());        
@@ -114,6 +136,8 @@ public class MainWindow extends Application {
     {
     	currentImage = new Image(getClass().getResource("/images/" + currentCard.GetImagePath()).toExternalForm(), true);   
     	imageView.setImage(currentImage);
+    	currentWord.setText(currentCard.GetWord());
+        currentDefinition.setText(currentCard.GetDefinition());
     }
     
     public static void main(String[] args) {
