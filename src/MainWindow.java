@@ -27,10 +27,12 @@ public class MainWindow extends Application {
 	FlashCard currentCard;
 	String deckFile = "resources/cards/test deck.txt";
 	ImageView imageView;
-	Button button;
+	Button flipButton, againButton, easyButton, normalButton, hardButton, currentButton;
 	Text currentWord,
-		currentDefinition;
+		currentDefinition,
+		currentReading;
 	VBox cardPane;
+	HBox answerButtons;
 
 	Gson gson;
 	
@@ -44,6 +46,9 @@ public class MainWindow extends Application {
         currentImage = new Image(getClass().getResource("/images/" + currentCard.GetImagePath()).toExternalForm(), true);
         currentWord = new Text(currentCard.GetWord());
         currentDefinition = new Text(currentCard.GetDefinition());
+        currentDefinition.setVisible(false);
+        currentReading = new Text(currentCard.GetReading());
+        currentReading.setVisible(false);
         InitializeDisplay();
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -54,37 +59,38 @@ public class MainWindow extends Application {
     	cardPane = new VBox();
     	imageView = new ImageView(currentImage); 
     	cardPane.getChildren().add(imageView);
+    	cardPane.getChildren().add(currentReading);
     	cardPane.getChildren().add(currentWord);
     	cardPane.getChildren().add(currentDefinition);
     	gridPane = new GridPane();
     	gridPane.setGridLinesVisible(true);
     	gridPane.add(cardPane, 1, 1);    	
         scene = new Scene(gridPane, 500, 500);
-        button = new Button("Next");
-        button.setOnAction(e -> {
-        	SwitchCard();
-        	UpdateDisplay();
-        	});
-        gridPane.add(button, 1, 2);
+        InitializeButtons();       
+        gridPane.add(flipButton, 1, 2);
         GridPane.setHalignment(cardPane, HPos.CENTER);
         GridPane.setValignment(cardPane, VPos.CENTER);
-        GridPane.setHalignment(button, HPos.CENTER);
+        GridPane.setHalignment(flipButton, HPos.CENTER);
+        GridPane.setHalignment(answerButtons, HPos.CENTER);
+        GridPane.setValignment(answerButtons, VPos.CENTER);
         
-        float heightPercent;
+        float heightPercent, widthPercent;
         
         for(int i = 0; i < 3; ++i)
         {           
             if(i != 1)
             {
             	heightPercent = 10.00f;
+            	widthPercent = 10.00f;
             }
             else
             {
             	heightPercent = 80.00f;
+            	widthPercent = 80.00f;
             }
             
         	ColumnConstraints colConst = new ColumnConstraints();
-            colConst.setPercentWidth(33.33);
+            colConst.setPercentWidth(widthPercent);
             gridPane.getColumnConstraints().add(colConst);
 
             RowConstraints rowConst = new RowConstraints();
@@ -95,7 +101,55 @@ public class MainWindow extends Application {
         cardPane.setSpacing(50);
         
         gridPane.prefWidthProperty().bind(scene.widthProperty());
-        gridPane.prefHeightProperty().bind(scene.heightProperty());        
+        gridPane.prefHeightProperty().bind(scene.heightProperty());
+        gridPane.setAlignment(Pos.CENTER);
+        answerButtons.setAlignment(Pos.CENTER);
+    }
+    
+    private void InitializeButtons()
+    {
+        flipButton = new Button("Flip");
+        againButton = new Button("Again");
+        easyButton = new Button("Easy");
+        normalButton = new Button("Normal");
+        hardButton = new Button("Hard");
+        
+        againButton.setOnAction(e -> {
+        	SwitchCard();
+        	UpdateDisplay();
+        	});
+        
+        hardButton.setOnAction(e -> {
+        	SwitchCard();
+        	UpdateDisplay();
+        	});
+        
+        normalButton.setOnAction(e -> {
+        	SwitchCard();
+        	UpdateDisplay();
+        	});
+        
+        easyButton.setOnAction(e -> {
+        	SwitchCard();
+        	UpdateDisplay();
+        	});
+        
+        flipButton.setOnAction(e -> {
+        	FlipCard();
+        });
+        
+        answerButtons = new HBox(5);
+        answerButtons.getChildren().add(againButton);
+        answerButtons.getChildren().add(hardButton);
+        answerButtons.getChildren().add(normalButton);
+        answerButtons.getChildren().add(easyButton);
+        
+        answerButtons.getChildren().forEach(node -> 
+        {
+        	GridPane.setHalignment(node, HPos.CENTER);
+        	GridPane.setValignment(node, VPos.CENTER);
+        });
+        
     }
     
     
@@ -117,9 +171,19 @@ public class MainWindow extends Application {
         jsonString = jsonData.toString();
         currentDeck = gson.fromJson(jsonString, FlashCard[].class);
     }
+    
+    private void FlipCard()
+    {
+    	currentDefinition.setVisible(true);
+    	currentReading.setVisible(true);
+    	gridPane.getChildren().remove(flipButton);
+    	gridPane.add(answerButtons, 1, 2);
+    }
 	
     private void SwitchCard()
     {
+    	currentDefinition.setVisible(false);
+    	currentReading.setVisible(false);
     	if(currentCard == currentDeck[0])
     	{
     		currentCard = currentDeck[1];
@@ -130,6 +194,8 @@ public class MainWindow extends Application {
         		currentCard = currentDeck[0];
         	}
     	}
+    	gridPane.getChildren().remove(answerButtons);
+    	gridPane.add(flipButton, 1, 2);
     }
     
     private void UpdateDisplay()
