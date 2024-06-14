@@ -204,6 +204,7 @@ public class MainWindow extends Application {
     	imageView.setImage(currentImage);
     	currentWord.setText(currentCard.GetWord());
         currentDefinition.setText(currentCard.GetDefinition());
+        currentReading.setText(currentCard.GetReading());
     }
     
     public static void main(String[] args) {
