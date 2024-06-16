@@ -1,5 +1,5 @@
 [
-	{"targetWord": "犬", "reading": "いぬ", "definition": "dog", "imagePath": "Test.png" },
-	{"targetWord": "駅", "reading": "えき", "definition": "station", "imagePath": "Test1.png" },
-	{"targetWord": "改めて", "reading": "あらためて", "definition": "again, once more", "imagePath": "Test2.jpg", "audioPath": "test2audio.mp3" }
+	{"targetWord": "犬", "reading": "いぬ", "definition": "dog", "imagePath": "Test.png", "sentence": "犬を飼っています", "translatedSentence": "I have a dog."},
+	{"targetWord": "駅", "reading": "えき", "definition": "station", "imagePath": "Test1.png", "sentence": "駅に行きましょう", "translatedSentence": "Let's go to the station." },
+	{"targetWord": "改めて", "reading": "あらためて", "definition": "again, once more", "imagePath": "Test2.jpg", "audioPath": "test2audio.mp3", "sentence": "また改めて、娘の部屋探しお願いできますか", "translatedSentence": "Can I ask you once more to help my daughter search for a room?" }
 ]

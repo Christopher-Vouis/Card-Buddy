@@ -6,16 +6,23 @@ import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Paint;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.text.Text;
-
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaPlayer.Status;
 import javafx.scene.control.Button;
+import javafx.scene.control.ScrollPane;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.File;
 
 import com.google.gson.Gson;
 
@@ -27,13 +34,18 @@ public class MainWindow extends Application {
 	String deckFile = "resources/cards/test deck.txt";
 	ImageView imageView;
 	VBox imageContainer;
-	Button flipButton, againButton, easyButton, normalButton, hardButton, currentButton;
+	Button flipButton, againButton, easyButton, normalButton, hardButton, audioButton;
 	Text currentWord,
 		currentDefinition,
-		currentReading;
-	VBox mainContainer, cardContainer;
-	HBox answerButtons;
-
+		currentReading,
+		currentSentence,
+		currentTranslatedSentence;
+	VBox scrollContainer, mainContainer, cardContainer;
+	HBox answerButtons, buttonContainer;
+	MediaPlayer mediaPlayer;
+	Media currentAudio;
+	Region spacerTop, spacerMid;
+	ScrollPane scrollPane;
 	Gson gson;
 	
 	double imageWidth, imageHeight;
@@ -42,42 +54,67 @@ public class MainWindow extends Application {
     public void start(Stage primaryStage) throws Exception 
     {
 		gson = new Gson();			
-        primaryStage.setTitle("Card Buddy");             
+        primaryStage.setTitle("Card Buddy");
         InitializeDeck();
         InitializeButtons();
         InitializeDisplay();
+        primaryStage.setMinHeight(200);
+        primaryStage.setMinWidth(350);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
     
     private void InitializeDisplay()
-    {
+    {   	
     	mainContainer = new VBox();
-        scene = new Scene(mainContainer, 800, 800);    
+    	scrollContainer = new VBox();
+    	scrollPane = new ScrollPane();
+        scene = new Scene(scrollContainer, 1000, 1000);       
+        spacerMid = new Region();
+        spacerTop = new Region();
     	cardContainer = new VBox();
+    	buttonContainer = new HBox();
     	imageView = new ImageView(); 
-    	SetImage(currentCard.GetImagePath());
     	imageView.setPreserveRatio(true);
     	imageContainer = new VBox(imageView);
-
-    	cardContainer.getChildren().add(imageContainer);
-    	cardContainer.getChildren().add(currentReading);
-    	cardContainer.getChildren().add(currentWord);
-    	cardContainer.getChildren().add(currentDefinition);
+    	currentWord = new Text();
+    	currentDefinition = new Text();
+		currentReading = new Text();
+		currentSentence = new Text();
+		currentTranslatedSentence = new Text();
+    	SetImage(currentCard.GetImagePath());
+    	
+    	SetFontStyles();
+    	BuildCardDisplay();
+    	
+    	mainContainer.getChildren().add(spacerTop);
     	mainContainer.getChildren().add(cardContainer);
-    	mainContainer.getChildren().add(flipButton); 	
+    	mainContainer.getChildren().add(spacerMid);
+    	mainContainer.getChildren().add(buttonContainer);
+    	VBox.setVgrow(spacerTop, Priority.ALWAYS);
+    	VBox.setVgrow(spacerMid, Priority.ALWAYS);
+    	buttonContainer.getChildren().add(flipButton); 	
     
         cardContainer.setAlignment(Pos.CENTER);
-        cardContainer.setSpacing(50);
 
         mainContainer.setAlignment(Pos.CENTER);
-        answerButtons.setAlignment(Pos.CENTER);
-        
+        buttonContainer.setAlignment(Pos.CENTER);
+        buttonContainer.setMinHeight(100);
+
         mainContainer.prefWidthProperty().bind(scene.widthProperty());
         mainContainer.prefHeightProperty().bind(scene.heightProperty());
-        cardContainer.setStyle("-fx-border-width: 3; -fx-border-color: red;");
-        imageContainer.setStyle("-fx-border-width: 3; -fx-border-color: green; -fx-padding: 10px");
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0; ");
+        mainContainer.setStyle("-fx-background-color: #333333;");
+        cardContainer.setStyle("-fx-border-width: 3; -fx-border-color: red; -fx-padding: 30px, 10px, 10px, 10px;");
+        imageContainer.setStyle("-fx-border-width: 3; -fx-border-color: green; -fx-padding: 5%;");
+
         imageContainer.setAlignment(Pos.CENTER);
+        
+        scrollPane.setContent(mainContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        
+        scrollContainer.getChildren().add(scrollPane);
         
         scene.widthProperty().addListener((obs, oldVal, newVal) -> {
             double newWidth = newVal.doubleValue();
@@ -99,6 +136,20 @@ public class MainWindow extends Application {
         
     }
     
+    private void SetFontStyles()
+    {
+        currentWord.setFill(Paint.valueOf("#DDDDDD"));
+        currentDefinition.setFill(Paint.valueOf("#DDDDDD"));
+        currentReading.setFill(Paint.valueOf("#DDDDDD"));
+        currentSentence.setFill(Paint.valueOf("#DDDDDD"));
+        currentTranslatedSentence.setFill(Paint.valueOf("#DDDDDD"));
+        currentWord.setStyle("-fx-font-size: 65px;");
+        currentDefinition.setStyle("-fx-font-size: 30px;");
+        currentReading.setStyle("-fx-font-size: 25px;");
+        currentSentence.setStyle("-fx-font-size: 25px;");
+        currentTranslatedSentence.setStyle("-fx-font-size: 25px;");
+    }
+    
     private void InitializeButtons()
     {
         flipButton = new Button("Flip");
@@ -106,6 +157,7 @@ public class MainWindow extends Application {
         easyButton = new Button("Easy");
         normalButton = new Button("Normal");
         hardButton = new Button("Hard");
+        audioButton = new Button("Play Audio");
         
         againButton.setOnAction(e -> {
         	SwitchCard();
@@ -129,9 +181,15 @@ public class MainWindow extends Application {
         
         flipButton.setOnAction(e -> {
         	FlipCard();
-        });
+        	});
+        
+        audioButton.setOnAction(e -> {
+        	mediaPlayer.seek(Duration.ZERO);
+        	mediaPlayer.play();
+        	});
         
         answerButtons = new HBox(5);
+        answerButtons.setAlignment(Pos.CENTER);
         answerButtons.getChildren().add(againButton);
         answerButtons.getChildren().add(hardButton);
         answerButtons.getChildren().add(normalButton);
@@ -157,6 +215,7 @@ public class MainWindow extends Application {
         jsonString = jsonData.toString();
         currentDeck = gson.fromJson(jsonString, FlashCard[].class);
         currentCard = currentDeck[0];
+
         currentWord = new Text(currentCard.GetWord());
         currentDefinition = new Text(currentCard.GetDefinition());
         currentDefinition.setVisible(false);
@@ -166,16 +225,35 @@ public class MainWindow extends Application {
     
     private void FlipCard()
     {
-    	currentDefinition.setVisible(true);
-    	currentReading.setVisible(true);
-    	mainContainer.getChildren().remove(flipButton);
-    	mainContainer.getChildren().add(answerButtons);
+    	if(currentCard.GetAudioPath() != null)
+    	{
+    		audioButton.setVisible(true);
+    	}
+    	if(currentCard.GetReading() != null)
+    	{
+    		currentReading.setVisible(true);
+    	}
+    	if(currentCard.GetTranslatedSentence() != null)
+    	{
+    		currentTranslatedSentence.setVisible(true);
+    	}
+    	if(currentCard.GetDefinition() != null)
+    	{
+    		currentDefinition.setVisible(true);
+    	}
+    	
+    	
+    	buttonContainer.getChildren().remove(flipButton);
+    	buttonContainer.getChildren().add(answerButtons);
     }
 	
     private void SwitchCard()
     {
-    	currentDefinition.setVisible(false);
-    	currentReading.setVisible(false);
+    	if(mediaPlayer != null && mediaPlayer.getStatus() == Status.PLAYING)
+    	{
+    		mediaPlayer.stop();
+    	}
+
     	if(currentCard == currentDeck[0])
     	{
     		currentCard = currentDeck[2];
@@ -186,16 +264,64 @@ public class MainWindow extends Application {
         		currentCard = currentDeck[0];
         	}
     	}
-    	mainContainer.getChildren().remove(answerButtons);
-    	mainContainer.getChildren().add(flipButton);
+    	
+    	buttonContainer.getChildren().remove(answerButtons);
+    	buttonContainer.getChildren().add(flipButton);
+    }
+    
+    private void BuildCardDisplay()
+    {
+
+    	if(cardContainer != null)
+    	{
+            cardContainer.getChildren().clear();
+    	}
+
+    	if(currentCard.GetImagePath() != null)
+    	{
+    		cardContainer.getChildren().add(imageContainer);
+    		SetImage(currentCard.GetImagePath());
+    	}
+    	if(currentCard.GetAudioPath() != null)
+    	{
+    		currentAudio = new Media(getClass().getResource("/audio/" + currentCard.GetAudioPath()).toExternalForm());
+    		mediaPlayer = new MediaPlayer(currentAudio);
+    		cardContainer.getChildren().add(audioButton);
+    		audioButton.setVisible(false);
+    	}
+    	if(currentCard.GetReading() != null)
+    	{
+    		cardContainer.getChildren().add(currentReading);
+    		currentReading.setText(currentCard.GetReading());
+    		currentReading.setVisible(false);
+    	}
+    	if(currentCard.GetWord() != null)
+    	{
+    		cardContainer.getChildren().add(currentWord);
+    		currentWord.setText(currentCard.GetWord());
+    	}
+    	if(currentCard.GetDefinition() != null)
+    	{
+    		cardContainer.getChildren().add(currentDefinition);
+    		currentDefinition.setText(currentCard.GetDefinition());
+    		currentDefinition.setVisible(false);
+    	}
+    	if(currentCard.GetSentence() != null)
+    	{
+    		cardContainer.getChildren().add(currentSentence);
+    		currentSentence.setText(currentCard.GetSentence());
+    	}
+    	if(currentCard.GetTranslatedSentence() != null)
+    	{
+    		cardContainer.getChildren().add(currentTranslatedSentence);
+    		currentTranslatedSentence.setText(currentCard.GetTranslatedSentence());
+    		currentTranslatedSentence.setVisible(false);
+    	}
     }
     
     private void UpdateDisplay()
     {
-    	SetImage(currentCard.GetImagePath());
-    	currentWord.setText(currentCard.GetWord());
-        currentDefinition.setText(currentCard.GetDefinition());
-        currentReading.setText(currentCard.GetReading());       
+    	BuildCardDisplay();
     }
     
     private void SetImage(String imgPath)
