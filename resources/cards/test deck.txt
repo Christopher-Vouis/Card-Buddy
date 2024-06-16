@@ -1,4 +1,5 @@
 [
 	{"targetWord": "犬", "reading": "いぬ", "definition": "dog", "imagePath": "Test.png" },
-	{"targetWord": "駅", "reading": "えき", "definition": "station", "imagePath": "Test1.png" }
+	{"targetWord": "駅", "reading": "えき", "definition": "station", "imagePath": "Test1.png" },
+	{"targetWord": "改めて", "reading": "あらためて", "definition": "again, once more", "imagePath": "Test2.jpg", "audioPath": "test2audio.mp3" }
 ]

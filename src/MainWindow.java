@@ -1,5 +1,7 @@
 import java.net.URL;
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
@@ -19,36 +21,30 @@ import com.google.gson.Gson;
 
 
 public class MainWindow extends Application {
-
-	GridPane gridPane;
 	Scene scene;
-	Image currentImage;
 	FlashCard[] currentDeck;
 	FlashCard currentCard;
 	String deckFile = "resources/cards/test deck.txt";
 	ImageView imageView;
+	VBox imageContainer;
 	Button flipButton, againButton, easyButton, normalButton, hardButton, currentButton;
 	Text currentWord,
 		currentDefinition,
 		currentReading;
-	VBox cardPane;
+	VBox mainContainer, cardContainer;
 	HBox answerButtons;
 
 	Gson gson;
+	
+	double imageWidth, imageHeight;
 	
     @Override
     public void start(Stage primaryStage) throws Exception 
     {
 		gson = new Gson();			
-        primaryStage.setTitle("Card Buddy");       
+        primaryStage.setTitle("Card Buddy");             
         InitializeDeck();
-        currentCard = currentDeck[0];
-        currentImage = new Image(getClass().getResource("/images/" + currentCard.GetImagePath()).toExternalForm(), true);
-        currentWord = new Text(currentCard.GetWord());
-        currentDefinition = new Text(currentCard.GetDefinition());
-        currentDefinition.setVisible(false);
-        currentReading = new Text(currentCard.GetReading());
-        currentReading.setVisible(false);
+        InitializeButtons();
         InitializeDisplay();
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -56,54 +52,51 @@ public class MainWindow extends Application {
     
     private void InitializeDisplay()
     {
-    	cardPane = new VBox();
-    	imageView = new ImageView(currentImage); 
-    	cardPane.getChildren().add(imageView);
-    	cardPane.getChildren().add(currentReading);
-    	cardPane.getChildren().add(currentWord);
-    	cardPane.getChildren().add(currentDefinition);
-    	gridPane = new GridPane();
-    	gridPane.setGridLinesVisible(true);
-    	gridPane.add(cardPane, 1, 1);    	
-        scene = new Scene(gridPane, 500, 500);
-        InitializeButtons();       
-        gridPane.add(flipButton, 1, 2);
-        GridPane.setHalignment(cardPane, HPos.CENTER);
-        GridPane.setValignment(cardPane, VPos.CENTER);
-        GridPane.setHalignment(flipButton, HPos.CENTER);
-        GridPane.setHalignment(answerButtons, HPos.CENTER);
-        GridPane.setValignment(answerButtons, VPos.CENTER);
-        
-        float heightPercent, widthPercent;
-        
-        for(int i = 0; i < 3; ++i)
-        {           
-            if(i != 1)
-            {
-            	heightPercent = 10.00f;
-            	widthPercent = 10.00f;
-            }
-            else
-            {
-            	heightPercent = 80.00f;
-            	widthPercent = 80.00f;
-            }
-            
-        	ColumnConstraints colConst = new ColumnConstraints();
-            colConst.setPercentWidth(widthPercent);
-            gridPane.getColumnConstraints().add(colConst);
+    	mainContainer = new VBox();
+        scene = new Scene(mainContainer, 800, 800);    
+    	cardContainer = new VBox();
+    	imageView = new ImageView(); 
+    	SetImage(currentCard.GetImagePath());
+    	imageView.setPreserveRatio(true);
+    	imageContainer = new VBox(imageView);
 
-            RowConstraints rowConst = new RowConstraints();
-            rowConst.setPercentHeight(heightPercent);
-            gridPane.getRowConstraints().add(rowConst);
-        }
-        cardPane.setAlignment(Pos.CENTER);
-        cardPane.setSpacing(50);
-        
-        gridPane.prefWidthProperty().bind(scene.widthProperty());
-        gridPane.prefHeightProperty().bind(scene.heightProperty());
-        gridPane.setAlignment(Pos.CENTER);
+    	cardContainer.getChildren().add(imageContainer);
+    	cardContainer.getChildren().add(currentReading);
+    	cardContainer.getChildren().add(currentWord);
+    	cardContainer.getChildren().add(currentDefinition);
+    	mainContainer.getChildren().add(cardContainer);
+    	mainContainer.getChildren().add(flipButton); 	
+    
+        cardContainer.setAlignment(Pos.CENTER);
+        cardContainer.setSpacing(50);
+
+        mainContainer.setAlignment(Pos.CENTER);
         answerButtons.setAlignment(Pos.CENTER);
+        
+        mainContainer.prefWidthProperty().bind(scene.widthProperty());
+        mainContainer.prefHeightProperty().bind(scene.heightProperty());
+        cardContainer.setStyle("-fx-border-width: 3; -fx-border-color: red;");
+        imageContainer.setStyle("-fx-border-width: 3; -fx-border-color: green; -fx-padding: 10px");
+        imageContainer.setAlignment(Pos.CENTER);
+        
+        scene.widthProperty().addListener((obs, oldVal, newVal) -> {
+            double newWidth = newVal.doubleValue();
+            if (newWidth < imageWidth) {
+            	imageView.setFitWidth(newWidth * 0.95f);
+            } else {
+            	imageView.setFitWidth(imageWidth);
+            }
+        });
+
+        scene.heightProperty().addListener((obs, oldVal, newVal) -> {
+            double newHeight = newVal.doubleValue();
+            if (newHeight < imageHeight) {
+            	imageView.setFitHeight(newHeight * 0.95f);
+            } else {
+            	imageView.setFitHeight(imageHeight);
+            }
+        });
+        
     }
     
     private void InitializeButtons()
@@ -142,14 +135,7 @@ public class MainWindow extends Application {
         answerButtons.getChildren().add(againButton);
         answerButtons.getChildren().add(hardButton);
         answerButtons.getChildren().add(normalButton);
-        answerButtons.getChildren().add(easyButton);
-        
-        answerButtons.getChildren().forEach(node -> 
-        {
-        	GridPane.setHalignment(node, HPos.CENTER);
-        	GridPane.setValignment(node, VPos.CENTER);
-        });
-        
+        answerButtons.getChildren().add(easyButton);      
     }
     
     
@@ -170,14 +156,20 @@ public class MainWindow extends Application {
         
         jsonString = jsonData.toString();
         currentDeck = gson.fromJson(jsonString, FlashCard[].class);
+        currentCard = currentDeck[0];
+        currentWord = new Text(currentCard.GetWord());
+        currentDefinition = new Text(currentCard.GetDefinition());
+        currentDefinition.setVisible(false);
+        currentReading = new Text(currentCard.GetReading());
+        currentReading.setVisible(false);
     }
     
     private void FlipCard()
     {
     	currentDefinition.setVisible(true);
     	currentReading.setVisible(true);
-    	gridPane.getChildren().remove(flipButton);
-    	gridPane.add(answerButtons, 1, 2);
+    	mainContainer.getChildren().remove(flipButton);
+    	mainContainer.getChildren().add(answerButtons);
     }
 	
     private void SwitchCard()
@@ -186,7 +178,7 @@ public class MainWindow extends Application {
     	currentReading.setVisible(false);
     	if(currentCard == currentDeck[0])
     	{
-    		currentCard = currentDeck[1];
+    		currentCard = currentDeck[2];
     	}
     	else
     	{
@@ -194,17 +186,70 @@ public class MainWindow extends Application {
         		currentCard = currentDeck[0];
         	}
     	}
-    	gridPane.getChildren().remove(answerButtons);
-    	gridPane.add(flipButton, 1, 2);
+    	mainContainer.getChildren().remove(answerButtons);
+    	mainContainer.getChildren().add(flipButton);
     }
     
     private void UpdateDisplay()
     {
-    	currentImage = new Image(getClass().getResource("/images/" + currentCard.GetImagePath()).toExternalForm(), true);   
-    	imageView.setImage(currentImage);
+    	SetImage(currentCard.GetImagePath());
     	currentWord.setText(currentCard.GetWord());
         currentDefinition.setText(currentCard.GetDefinition());
-        currentReading.setText(currentCard.GetReading());
+        currentReading.setText(currentCard.GetReading());       
+    }
+    
+    private void SetImage(String imgPath)
+    {
+    	Image newImage = new Image(getClass().getResource("/images/" + imgPath).toExternalForm(), true);
+
+    	newImage.progressProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.doubleValue() == 1.0) {
+                imageWidth = newImage.getWidth();
+                imageHeight = newImage.getHeight();
+                System.out.println("Image loaded with dimensions: " + imageWidth + "x" + imageHeight);
+                
+                imageView.setImage(newImage);
+                
+                if(imageWidth >= 50)
+                {
+                	imageView.minWidth(50);
+                }
+                else
+                {
+                	imageView.minWidth(imageWidth);
+                }
+                
+                if(imageHeight >= 50)
+                {
+                	imageView.minHeight(50);
+                }
+                else
+                {
+                	imageView.minHeight(imageHeight);
+                }
+
+            	if(imageWidth >= scene.getWidth())
+            	{
+            		imageView.setFitWidth(scene.getWidth() * 0.95f);        	
+                } 
+            	else 
+                {
+            		imageView.setFitWidth(imageWidth);
+                }
+            	
+            	if(imageHeight >= scene.getHeight())
+            	{
+            		imageView.setFitHeight(scene.getHeight() * 0.95f);        	
+                } 
+            	else 
+                {
+            		imageView.setFitHeight(imageHeight);
+                }
+            }
+        });
+
+
+
     }
     
     public static void main(String[] args) {

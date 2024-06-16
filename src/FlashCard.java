@@ -3,8 +3,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.text.Text;
 
 public class FlashCard {
-	private String targetWord = "", reading= "", definition= "",  imagePath = "";
+	private String targetWord = "", reading= "", definition= "",  imagePath = "", audioPath = "";
 
+	public FlashCard() {}
 	public FlashCard(String inWord, String inReading, String inDefinition, String inImagePath)
 	{
 		targetWord = inWord;
